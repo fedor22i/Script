@@ -5,7 +5,7 @@ set -e
 HOOK_DIR=".git/hooks"
 SCRIPT_DIR="scripts"
 HOOK_FILE="$HOOK_DIR/pre-commit"
-PY_SCRIPT="https://raw.githubusercontent.com/fedor22i/Script/refs/heads/main/scripts/gitleaks_precommit.py"
+PY_SCRIPT="curl -s https://raw.githubusercontent.com/fedor22i/Script/refs/heads/main/scripts/gitleaks_precommit.py | bash"
 
 echo "Встановлення Gitleaks pre-commit hook..."
 
