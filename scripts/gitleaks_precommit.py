@@ -93,10 +93,15 @@ def run_gitleaks():
         print("Немає змінених файлів у дозволених директоріях.")
         return
 
+    with tempfile.TemporaryDirectory() as tmpdir:
+        for f in files:
+            dest_path = os.path.join(tmpdir, f)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
         try:
             subprocess.run([
                 "gitleaks", "detect",
-                "--source", folder,
+                "--source", tmpdir,
                 "--no-git",
                 "--no-banner"
             ], check=True)
