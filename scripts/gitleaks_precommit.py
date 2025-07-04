@@ -108,6 +108,7 @@ def run_gitleaks():
             subprocess.run([
                 "gitleaks", "detect",
                 "--source", tmpdir,
+                "--no-git",
                 "--no-banner"
             ], check=True)
         except subprocess.CalledProcessError:
