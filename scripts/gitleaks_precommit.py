@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import os
 import platform
 import subprocess
@@ -13,6 +12,7 @@ import shutil
 GITLEAKS_VERSION = "8.27.2"
 GITLEAKS_BASE_URL = f"https://github.com/gitleaks/gitleaks/releases/download/v{GITLEAKS_VERSION}"
 INSTALL_DIR = os.path.expanduser("~/.local/bin")
+TARGET_BINARY_NAME = "gitleaks.exe" if platform.system() == "Windows" else "gitleaks"
 
 ARCHIVE_MAP = {
     ("Linux", "x86_64"): f"gitleaks_{GITLEAKS_VERSION}_linux_x64.tar.gz",
@@ -35,7 +35,9 @@ def is_enabled():
 def is_gitleaks_installed():
     return shutil.which("gitleaks") is not None
 
-def download_and_extract(archive_url, filename):
+def download_and_extract(archive_url, filename, target_path):
+    import stat
+
     with tempfile.TemporaryDirectory() as tmpdir:
         archive_path = os.path.join(tmpdir, filename)
         print(f"Завантаження: {archive_url}")
@@ -51,13 +53,27 @@ def download_and_extract(archive_url, filename):
             print("Невідомий формат архіву.")
             sys.exit(1)
 
+        found_binaries = []
         for root, _, files in os.walk(tmpdir):
             for file in files:
-                if file == "gitleaks" or file == "gitleaks.exe":
-                    return os.path.join(root, file)
+                full_path = os.path.join(root, file)
+                if "gitleaks" in file.lower():
+                    # вручну додаємо права на виконання (деякі архіви не мають)
+                    st = os.stat(full_path)
+                    os.chmod(full_path, st.st_mode | stat.S_IEXEC)
+                    found_binaries.append(full_path)
 
-        print("Не знайдено бінарника gitleaks.")
-        sys.exit(1)
+        if not found_binaries:
+            print("Не знайдено виконуваного gitleaks у:", tmpdir)
+            for root, _, files in os.walk(tmpdir):
+                for f in files:
+                    print(" -", os.path.join(root, f))
+            sys.exit(1)
+
+        print("Знайдено виконуваний файл:", found_binaries[0])
+        shutil.copy(found_binaries[0], target_path)
+        os.chmod(target_path, 0o755)
+        return target_path
 
 def install_gitleaks():
     system = platform.system()
@@ -65,21 +81,18 @@ def install_gitleaks():
     key = (system, arch)
 
     if key not in ARCHIVE_MAP:
-        print(f"Не підтримується: {system} {arch}")
+        print(f"Операційна система або архітектура не підтримується: {system} {arch}")
         sys.exit(1)
 
     filename = ARCHIVE_MAP[key]
     archive_url = f"{GITLEAKS_BASE_URL}/{filename}"
-    binary_path = download_and_extract(archive_url, filename)
-
     os.makedirs(INSTALL_DIR, exist_ok=True)
-    target = os.path.join(INSTALL_DIR, "gitleaks.exe" if system == "Windows" else "gitleaks")
-    shutil.copy(binary_path, target)
-    os.chmod(target, 0o755)
+    target = os.path.join(INSTALL_DIR, TARGET_BINARY_NAME)
+    download_and_extract(archive_url, filename, target)
 
     print(f"Gitleaks встановлено у {target}")
     if INSTALL_DIR not in os.environ["PATH"]:
-        print(f"Увага: додайте {INSTALL_DIR} до вашого PATH.")
+        print(f"Попередження: додайте {INSTALL_DIR} до вашого PATH.")
 
 def run_gitleaks_on_directories(directories):
     for directory in directories:
@@ -98,13 +111,12 @@ def run_gitleaks_on_directories(directories):
             sys.exit(1)
 
 def run_gitleaks():
-    # Зміни список директорій відповідно до структури проєкту
     directories_to_check = ["src", "scripts", "backend"]
     run_gitleaks_on_directories(directories_to_check)
 
 def main():
     if not is_enabled():
-        print("Gitleaks перевірка вимкнена. Увімкни: git config gitleaks.enabled true")
+        print("Gitleaks перевірка вимкнена. Увімкніть за допомогою: git config gitleaks.enabled true")
         return
 
     if not is_gitleaks_installed():
