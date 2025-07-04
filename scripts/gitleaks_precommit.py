@@ -11,6 +11,7 @@ import shutil
 
 GITLEAKS_VERSION = "8.27.2"
 GITLEAKS_BASE_URL = f"https://github.com/gitleaks/gitleaks/releases/download/v{GITLEAKS_VERSION}"
+INSTALL_DIR = os.path.expanduser("~/.local/bin")
 
 ARCHIVE_MAP = {
     ("Linux", "x86_64"): f"gitleaks_{GITLEAKS_VERSION}_linux_x64.tar.gz",
@@ -22,8 +23,6 @@ ARCHIVE_MAP = {
     ("Windows", "x86_64"): f"gitleaks_{GITLEAKS_VERSION}_windows_x64.zip",
     ("Windows", "i386"): f"gitleaks_{GITLEAKS_VERSION}_windows_x32.zip",
 }
-
-INSTALL_DIR = os.path.expanduser("~/.local/bin")  # можна змінити
 
 def is_enabled():
     try:
@@ -38,7 +37,7 @@ def is_gitleaks_installed():
 def download_and_extract(archive_url, filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         archive_path = os.path.join(tmpdir, filename)
-        print(f"Завантаження {archive_url}...")
+        print(f"Завантаження: {archive_url}")
         urllib.request.urlretrieve(archive_url, archive_path)
 
         if filename.endswith(".tar.gz"):
@@ -48,17 +47,15 @@ def download_and_extract(archive_url, filename):
             with zipfile.ZipFile(archive_path, "r") as zip_ref:
                 zip_ref.extractall(tmpdir)
         else:
-            print("Невідомий тип архіву.")
+            print("Невідомий формат архіву.")
             sys.exit(1)
 
         for root, _, files in os.walk(tmpdir):
             for file in files:
-                if file == "gitleaks" or (file.startswith("gitleaks") and os.access(os.path.join(root, file), os.X_OK)):
-                    temp_bin = os.path.join(tempfile.gettempdir(), "gitleaks_bin")
-                    shutil.copy(os.path.join(root, file), temp_bin)
-                    return temp_bin
+                if file == "gitleaks" or file == "gitleaks.exe":
+                    return os.path.join(root, file)
 
-        print("gitleaks не знайдено в архіві.")
+        print("Не знайдено бінарника gitleaks.")
         sys.exit(1)
 
 def install_gitleaks():
@@ -67,32 +64,53 @@ def install_gitleaks():
     key = (system, arch)
 
     if key not in ARCHIVE_MAP:
-        print(f"Не підтримується ОС/архітектура: {system} {arch}")
+        print(f"Не підтримується: {system} {arch}")
         sys.exit(1)
 
     filename = ARCHIVE_MAP[key]
     archive_url = f"{GITLEAKS_BASE_URL}/{filename}"
-
     binary_path = download_and_extract(archive_url, filename)
-    os.makedirs(INSTALL_DIR, exist_ok=True)
-    target_path = os.path.join(INSTALL_DIR, "gitleaks.exe" if system == "Windows" else "gitleaks")
-    shutil.copy(binary_path, target_path)
-    os.chmod(target_path, 0o755)
 
-    print(f"Встановлено gitleaks → {target_path}")
+    os.makedirs(INSTALL_DIR, exist_ok=True)
+    target = os.path.join(INSTALL_DIR, "gitleaks.exe" if system == "Windows" else "gitleaks")
+    shutil.copy(binary_path, target)
+    os.chmod(target, 0o755)
+
+    print(f"Gitleaks встановлено → {target}")
     if INSTALL_DIR not in os.environ["PATH"]:
         print(f"Увага: додайте {INSTALL_DIR} до вашого PATH.")
 
+def get_staged_files_in_folders(allowed_folders):
+    result = subprocess.run(["git", "diff", "--cached", "--name-only"], stdout=subprocess.PIPE, text=True)
+    files = result.stdout.strip().split('\n')
+    return [f for f in files if any(f.startswith(folder + "/") for folder in allowed_folders)]
+
+def run_gitleaks_on_files(files):
+    for f in files:
+        folder = os.path.dirname(f) or "."
+        print(f"Перевірка: {f}")
+        try:
+            subprocess.run([
+                "gitleaks", "detect",
+                "--source", folder,
+                "--no-banner",
+                "--redact"
+            ], check=True)
+        except subprocess.CalledProcessError:
+            print(f"Gitleaks виявив секрет у {f}. Коміт відхилено.")
+            sys.exit(1)
+
 def run_gitleaks():
-    try:
-        subprocess.run(["gitleaks", "detect", "--no-banner"], check=True)
-    except subprocess.CalledProcessError:
-        print("Gitleaks виявив потенційні секрети! Коміт відхилено.")
-        sys.exit(1)
+    allowed_folders = ["src", "app", "scripts"]  # ← змінити за потребою
+    files = get_staged_files_in_folders(allowed_folders)
+    if not files:
+        print("Немає змінених файлів у дозволених директоріях.")
+        return
+    run_gitleaks_on_files(files)
 
 def main():
     if not is_enabled():
-        print("Gitleaks перевірка вимкнена (використай `git config gitleaks.enabled true`)")
+        print("Gitleaks перевірка вимкнена. Увімкни: git config gitleaks.enabled true")
         return
 
     if not is_gitleaks_installed():
