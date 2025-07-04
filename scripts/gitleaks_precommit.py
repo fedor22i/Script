@@ -35,7 +35,7 @@ def is_enabled():
 def is_gitleaks_installed():
     return shutil.which("gitleaks") is not None
 
-def download_and_extract(archive_url, filename, target_path):
+def download_and_extract(archive_url, filename):
     import stat
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -71,9 +71,8 @@ def download_and_extract(archive_url, filename, target_path):
             sys.exit(1)
 
         print("Знайдено виконуваний файл:", found_binaries[0])
-        shutil.copy(found_binaries[0], target_path)
-        os.chmod(target_path, 0o755)
-        return target_path
+        return found_binaries[0]
+
 
 def install_gitleaks():
     system = platform.system()
