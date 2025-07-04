@@ -97,6 +97,12 @@ def run_gitleaks():
         for f in files:
             dest_path = os.path.join(tmpdir, f)
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            try:
+                with open(dest_path, "wb") as out:
+                    subprocess.run(["git", "show", f":{f}"], stdout=out, check=True)
+            except subprocess.CalledProcessError:
+                print(f"Не вдалося отримати staged-версію файлу: {f}")
+                sys.exit(1)
 
         try:
             subprocess.run([
