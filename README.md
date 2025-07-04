@@ -30,3 +30,5 @@ git config gitleaks.enabled false
  * git
  * Linux/macOS/Windows (через Git Bash або WSL)
 
+## Приклад
+![Screenshot_1](https://github.com/user-attachments/assets/4e9f866f-e8db-4c27-adb9-51e2fe78ce31)
