@@ -1,8 +1,9 @@
-Telegram bot token = "5737152315:AAEbMrP5RtestLhXQoWlqBodSQAX-mFgwA"
-password = "1213"21
-fdgfdgewfwefwef
-class CustomClass:
-    discord_client_secret = '8dyfuiRyq=vVc3RRr_edRk-fK__JItpZ'  #gitleaks:allow
+Telegram Bot Token = 5737152315:AAEbMrP5RtestLhXQoWlqBodSQAX-mFgwA
 
-DB_PASSWORD=8ae31cacf141669ddfb5da
+password = 121321
+
+fdgfdgewfwefwef
+
+class CustomClass:
+    discord_client_secret = '8dyfuiRyq=vVc3RRr_edRk-fK__JItpZ'
 

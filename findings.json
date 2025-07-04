@@ -1,0 +1,23 @@
+[
+ {
+  "RuleID": "generic-api-key",
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 7,
+  "EndLine": 7,
+  "StartColumn": 2,
+  "EndColumn": 35,
+  "Match": "DB_PASSWORD=8ae31cacf141669ddfb5da",
+  "Secret": "8ae31cacf141669ddfb5da",
+  "File": "scripts/test",
+  "SymlinkFile": "",
+  "Commit": "a396a0ea7b0423b1d6fa5d29df23895fbcc8786d",
+  "Link": "https://github.com/fedor22i/Script/blob/a396a0ea7b0423b1d6fa5d29df23895fbcc8786d/scripts/test#L7",
+  "Entropy": 3.5383105,
+  "Author": "Tony",
+  "Email": "48512979+fedor22i@users.noreply.github.com",
+  "Date": "2025-07-04T14:42:58Z",
+  "Message": "this commit contains a secret5",
+  "Tags": [],
+  "Fingerprint": "a396a0ea7b0423b1d6fa5d29df23895fbcc8786d:scripts/test:generic-api-key:7"
+ }
+]
