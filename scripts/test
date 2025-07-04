@@ -1,3 +1,8 @@
 Telegram bot token = "5737152315:AAEbMrP5RtestLhXQoWlqBodSQAX-mFgwA"
 password = "1213"21
 fdgfdgewfwefwef
+class CustomClass:
+    discord_client_secret = '8dyfuiRyq=vVc3RRr_edRk-fK__JItpZ'  #gitleaks:allow
+
+DB_PASSWORD=8ae31cacf141669ddfb5da
+
