@@ -101,7 +101,7 @@ def run_gitleaks_on_files(files):
             sys.exit(1)
 
 def run_gitleaks():
-    allowed_folders = ["src", "app", "scripts"]  # ← змінити за потребою
+    allowed_folders = ["src", "app"]  # ← змінити за потребою
     files = get_staged_files_in_folders(allowed_folders)
     if not files:
         print("Немає змінених файлів у дозволених директоріях.")
