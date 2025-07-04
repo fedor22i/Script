@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import os
 import platform
 import subprocess
@@ -80,33 +81,38 @@ def install_gitleaks():
     if INSTALL_DIR not in os.environ["PATH"]:
         print(f"Увага: додайте {INSTALL_DIR} до вашого PATH.")
 
-def get_staged_files_in_folders(allowed_folders):
+def run_gitleaks():
+    allowed_folders = ["src", "app", "scripts"]  # ← змінити під свій проект
+
+    # Отримати staged файли
     result = subprocess.run(["git", "diff", "--cached", "--name-only"], stdout=subprocess.PIPE, text=True)
     files = result.stdout.strip().split('\n')
-    return [f for f in files if any(f.startswith(folder + "/") for folder in allowed_folders)]
+    files = [f for f in files if any(f.startswith(folder + "/") for folder in allowed_folders)]
 
-def run_gitleaks_on_files(files):
-    for f in files:
-        folder = os.path.dirname(f) or "."
-        print(f"Перевірка: {f}")
-        try:
-            subprocess.run([
-                "gitleaks", "detect",
-                "--source", folder,
-                "--no-banner",
-                "--redact"
-            ], check=True)
-        except subprocess.CalledProcessError:
-            print(f"Gitleaks виявив секрет у {f}. Коміт відхилено.")
-            sys.exit(1)
-
-def run_gitleaks():
-    allowed_folders = ["src", "app"]  # ← змінити за потребою
-    files = get_staged_files_in_folders(allowed_folders)
     if not files:
         print("Немає змінених файлів у дозволених директоріях.")
         return
-    run_gitleaks_on_files(files)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        for f in files:
+            dest_path = os.path.join(tmpdir, f)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            try:
+                with open(dest_path, "wb") as out:
+                    subprocess.run(["git", "show", f":{f}"], stdout=out, check=True)
+            except subprocess.CalledProcessError:
+                print(f"Не вдалося отримати staged-версію файлу: {f}")
+                sys.exit(1)
+
+        try:
+            subprocess.run([
+                "gitleaks", "detect",
+                "--source", tmpdir,
+                "--no-banner"
+            ], check=True)
+        except subprocess.CalledProcessError:
+            print("Gitleaks виявив секрети у staged-файлах. Коміт заблоковано.")
+            sys.exit(1)
 
 def main():
     if not is_enabled():
