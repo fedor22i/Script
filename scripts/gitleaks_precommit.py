@@ -77,43 +77,30 @@ def install_gitleaks():
     shutil.copy(binary_path, target)
     os.chmod(target, 0o755)
 
-    print(f"Gitleaks встановлено → {target}")
+    print(f"Gitleaks встановлено у {target}")
     if INSTALL_DIR not in os.environ["PATH"]:
         print(f"Увага: додайте {INSTALL_DIR} до вашого PATH.")
 
-def run_gitleaks():
-    allowed_folders = ["src", "app", "scripts"]  # ← змінити під свій проект
-
-    # Отримати staged файли
-    result = subprocess.run(["git", "diff", "--cached", "--name-only"], stdout=subprocess.PIPE, text=True)
-    files = result.stdout.strip().split('\n')
-    files = [f for f in files if any(f.startswith(folder + "/") for folder in allowed_folders)]
-
-    if not files:
-        print("Немає змінених файлів у дозволених директоріях.")
-        return
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        for f in files:
-            dest_path = os.path.join(tmpdir, f)
-            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-            try:
-                with open(dest_path, "wb") as out:
-                    subprocess.run(["git", "show", f":{f}"], stdout=out, check=True)
-            except subprocess.CalledProcessError:
-                print(f"Не вдалося отримати staged-версію файлу: {f}")
-                sys.exit(1)
-
+def run_gitleaks_on_directories(directories):
+    for directory in directories:
+        if not os.path.isdir(directory):
+            continue
+        print(f"Перевірка каталогу: {directory}")
         try:
             subprocess.run([
                 "gitleaks", "detect",
-                "--source", tmpdir,
+                "--source", directory,
                 "--no-git",
                 "--no-banner"
             ], check=True)
         except subprocess.CalledProcessError:
-            print("Gitleaks виявив секрети у staged-файлах. Коміт заблоковано.")
+            print(f"Виявлено секрети в каталозі: {directory}. Коміт заблоковано.")
             sys.exit(1)
+
+def run_gitleaks():
+    # Зміни список директорій відповідно до структури проєкту
+    directories_to_check = ["src", "scripts", "backend"]
+    run_gitleaks_on_directories(directories_to_check)
 
 def main():
     if not is_enabled():
