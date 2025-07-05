@@ -57,7 +57,8 @@ def download_and_extract(archive_url, filename):
     for root, _, files in os.walk(tmpdir):
         for file in files:
             full_path = os.path.join(root, file)
-            if "gitleaks" in file.lower():
+            # Ищем только файл с именем "gitleaks" (или "gitleaks.exe" для Windows)
+            if file == "gitleaks" or file == "gitleaks.exe":
                 os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
                 print("Знайдено файл:", full_path)
                 return full_path, tmpdir  # повертаємо і файл, і папку
