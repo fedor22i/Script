@@ -38,34 +38,34 @@ def is_gitleaks_installed():
     return shutil.which("gitleaks") is not None
 
 def download_and_extract(archive_url, filename):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        archive_path = os.path.join(tmpdir, filename)
-        print(f"Завантаження: {archive_url}")
-        urllib.request.urlretrieve(archive_url, archive_path)
+    # Створюємо тимчасову папку (не через with)
+    tmpdir = tempfile.mkdtemp()
+    archive_path = os.path.join(tmpdir, filename)
+    print(f"Завантаження: {archive_url}")
+    urllib.request.urlretrieve(archive_url, archive_path)
 
-        # Розпакування
-        if filename.endswith(".tar.gz"):
-            with tarfile.open(archive_path, "r:gz") as tar:
-                tar.extractall(tmpdir)
-        elif filename.endswith(".zip"):
-            with zipfile.ZipFile(archive_path, "r") as zip_ref:
-                zip_ref.extractall(tmpdir)
-        else:
-            print("Невідомий формат архіву.")
-            sys.exit(1)
-
-        # Пошук виконуваного файлу
-        for root, _, files in os.walk(tmpdir):
-            for file in files:
-                full_path = os.path.join(root, file)
-                if "gitleaks" in file.lower():
-                    os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
-                    print("Знайдено файл:", full_path)
-                    return full_path
-
-        print("Не знайдено виконуваного файлу gitleaks.")
+    # Розпакування
+    if filename.endswith(".tar.gz"):
+        with tarfile.open(archive_path, "r:gz") as tar:
+            tar.extractall(tmpdir)
+    elif filename.endswith(".zip"):
+        with zipfile.ZipFile(archive_path, "r") as zip_ref:
+            zip_ref.extractall(tmpdir)
+    else:
+        print("Невідомий формат архіву.")
         sys.exit(1)
 
+    # Пошук виконуваного файлу
+    for root, _, files in os.walk(tmpdir):
+        for file in files:
+            full_path = os.path.join(root, file)
+            if "gitleaks" in file.lower():
+                os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
+                print("Знайдено файл:", full_path)
+                return full_path
+
+    print("Не знайдено виконуваного файлу gitleaks.")
+    sys.exit(1)
 
 def install_gitleaks():
     system = platform.system()
