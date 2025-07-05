@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import os
 import platform
 import subprocess
@@ -8,6 +9,7 @@ import urllib.request
 import tarfile
 import zipfile
 import shutil
+import stat
 
 GITLEAKS_VERSION = "8.27.2"
 GITLEAKS_BASE_URL = f"https://github.com/gitleaks/gitleaks/releases/download/v{GITLEAKS_VERSION}"
@@ -35,14 +37,13 @@ def is_enabled():
 def is_gitleaks_installed():
     return shutil.which("gitleaks") is not None
 
-def download_and_extract(archive_url, filename, target_path):
-    import stat
-
+def download_and_extract(archive_url, filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         archive_path = os.path.join(tmpdir, filename)
         print(f"Завантаження: {archive_url}")
         urllib.request.urlretrieve(archive_url, archive_path)
 
+        # Розпакування
         if filename.endswith(".tar.gz"):
             with tarfile.open(archive_path, "r:gz") as tar:
                 tar.extractall(tmpdir)
@@ -53,27 +54,17 @@ def download_and_extract(archive_url, filename, target_path):
             print("Невідомий формат архіву.")
             sys.exit(1)
 
-        found_binaries = []
+        # Пошук виконуваного файлу
         for root, _, files in os.walk(tmpdir):
             for file in files:
                 full_path = os.path.join(root, file)
                 if "gitleaks" in file.lower():
-                    # вручну додаємо права на виконання (деякі архіви не мають)
-                    st = os.stat(full_path)
-                    os.chmod(full_path, st.st_mode | stat.S_IEXEC)
-                    found_binaries.append(full_path)
+                    os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
+                    print("Знайдено файл:", full_path)
+                    return full_path
 
-        if not found_binaries:
-            print("Не знайдено виконуваного gitleaks у:", tmpdir)
-            for root, _, files in os.walk(tmpdir):
-                for f in files:
-                    print(" -", os.path.join(root, f))
-            sys.exit(1)
-
-        print("Знайдено виконуваний файл:", found_binaries[0])
-        shutil.copy(found_binaries[0], target_path)
-        os.chmod(target_path, 0o755)
-        return target_path
+        print("Не знайдено виконуваного файлу gitleaks.")
+        sys.exit(1)
 
 def install_gitleaks():
     system = platform.system()
@@ -86,9 +77,12 @@ def install_gitleaks():
 
     filename = ARCHIVE_MAP[key]
     archive_url = f"{GITLEAKS_BASE_URL}/{filename}"
+    binary_path = download_and_extract(archive_url, filename)
+
     os.makedirs(INSTALL_DIR, exist_ok=True)
     target = os.path.join(INSTALL_DIR, TARGET_BINARY_NAME)
-    download_and_extract(archive_url, filename, target)
+    shutil.copy(binary_path, target)
+    os.chmod(target, 0o755)
 
     print(f"Gitleaks встановлено у {target}")
     if INSTALL_DIR not in os.environ["PATH"]:
