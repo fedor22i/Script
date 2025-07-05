@@ -54,14 +54,19 @@ def download_and_extract(archive_url, filename):
         print("Невідомий формат архіву.")
         sys.exit(1)
 
+    # Ищем только настоящий исполняемый файл, а не архив
     for root, _, files in os.walk(tmpdir):
         for file in files:
             full_path = os.path.join(root, file)
-            # Ищем только файл с именем "gitleaks" (или "gitleaks.exe" для Windows)
-            if file == "gitleaks" or file == "gitleaks.exe":
-                os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
-                print("Знайдено файл:", full_path)
-                return full_path, tmpdir  # повертаємо і файл, і папку
+            # Только файл без расширения .tar.gz, .zip и т.п.
+            if (file == "gitleaks" or file == "gitleaks.exe") and os.path.isfile(full_path):
+                # Проверяем, что это действительно ELF (для Linux)
+                with open(full_path, "rb") as f:
+                    magic = f.read(4)
+                    if magic == b'\x7fELF' or file.endswith('.exe'):
+                        os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
+                        print("Знайдено файл:", full_path)
+                        return full_path, tmpdir
 
     print("Не знайдено виконуваного файлу gitleaks.")
     sys.exit(1)
