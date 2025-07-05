@@ -105,7 +105,7 @@ def run_gitleaks_on_directories(directories):
             sys.exit(1)
 
 def run_gitleaks():
-    directories_to_check = ["src", "scripts", "backend"]
+    directories_to_check = ["."]
     run_gitleaks_on_directories(directories_to_check)
 
 def main():
