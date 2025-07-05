@@ -25,6 +25,6 @@ chmod +x .git/hooks/pre-commit
 git config gitleaks.enabled true
 
 # Перевіряємо запуск
-python3 scripts/gitleaks_precommit.py
+python scripts/gitleaks_precommit.py
 
 echo "Gitleaks pre-commit hook встановлено успішно."
