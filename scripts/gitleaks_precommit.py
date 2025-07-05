@@ -90,13 +90,22 @@ def install_gitleaks():
         print(f"Попередження: додайте {INSTALL_DIR} до вашого PATH.")
 
 def run_gitleaks_on_directories(directories):
+    # Знаходимо gitleaks через PATH або беремо з INSTALL_DIR
+    gitleaks_path = shutil.which("gitleaks")
+    if not gitleaks_path:
+        gitleaks_path = os.path.join(INSTALL_DIR, TARGET_BINARY_NAME)
+        if not os.path.isfile(gitleaks_path):
+            print("Помилка: Gitleaks не знайдено.")
+            sys.exit(1)
+
     for directory in directories:
         if not os.path.isdir(directory):
             continue
         print(f"Перевірка каталогу: {directory}")
         try:
             subprocess.run([
-                "gitleaks", "detect",
+                gitleaks_path,
+                "detect",
                 "--source", directory,
                 "--no-git",
                 "--no-banner"
