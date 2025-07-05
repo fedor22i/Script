@@ -38,13 +38,11 @@ def is_gitleaks_installed():
     return shutil.which("gitleaks") is not None
 
 def download_and_extract(archive_url, filename):
-    # Створюємо тимчасову папку (не через with)
     tmpdir = tempfile.mkdtemp()
     archive_path = os.path.join(tmpdir, filename)
     print(f"Завантаження: {archive_url}")
     urllib.request.urlretrieve(archive_url, archive_path)
 
-    # Розпакування
     if filename.endswith(".tar.gz"):
         with tarfile.open(archive_path, "r:gz") as tar:
             tar.extractall(tmpdir)
@@ -55,14 +53,13 @@ def download_and_extract(archive_url, filename):
         print("Невідомий формат архіву.")
         sys.exit(1)
 
-    # Пошук виконуваного файлу
     for root, _, files in os.walk(tmpdir):
         for file in files:
             full_path = os.path.join(root, file)
             if "gitleaks" in file.lower():
                 os.chmod(full_path, os.stat(full_path).st_mode | stat.S_IEXEC)
                 print("Знайдено файл:", full_path)
-                return full_path
+                return full_path, tmpdir  # повертаємо і файл, і папку
 
     print("Не знайдено виконуваного файлу gitleaks.")
     sys.exit(1)
@@ -78,12 +75,14 @@ def install_gitleaks():
 
     filename = ARCHIVE_MAP[key]
     archive_url = f"{GITLEAKS_BASE_URL}/{filename}"
-    binary_path = download_and_extract(archive_url, filename)
+    binary_path, tmpdir = download_and_extract(archive_url, filename)
 
     os.makedirs(INSTALL_DIR, exist_ok=True)
     target = os.path.join(INSTALL_DIR, TARGET_BINARY_NAME)
     shutil.copy(binary_path, target)
     os.chmod(target, 0o755)
+
+    shutil.rmtree(tmpdir)  # тепер безпечно видалити тимчасову папку
 
     print(f"Gitleaks встановлено у {target}")
     if INSTALL_DIR not in os.environ["PATH"]:
