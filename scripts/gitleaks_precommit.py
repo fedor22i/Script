@@ -24,6 +24,7 @@ ARCHIVE_MAP = {
     ("Darwin", "x86_64"): f"gitleaks_{GITLEAKS_VERSION}_darwin_x64.tar.gz",
     ("Darwin", "arm64"): f"gitleaks_{GITLEAKS_VERSION}_darwin_arm64.tar.gz",
     ("Windows", "x86_64"): f"gitleaks_{GITLEAKS_VERSION}_windows_x64.zip",
+    ("Windows", "AMD64"): f"gitleaks_{GITLEAKS_VERSION}_windows_x64.zip",
     ("Windows", "i386"): f"gitleaks_{GITLEAKS_VERSION}_windows_x32.zip",
 }
 
