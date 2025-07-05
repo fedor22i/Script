@@ -11,7 +11,7 @@
 
 2. Запустити інсталяційний скрипт:
 ```
-bash scripts/setup_gitleaks_hook.sh
+curl -fsSL https://raw.githubusercontent.com/fedor22i/Script/refs/heads/main/scripts/install.sh | bash
 ```
 
 ## Є можливість увімкнення/вимкнення перевірки вручну

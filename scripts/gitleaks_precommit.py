@@ -66,6 +66,7 @@ def download_and_extract(archive_url, filename):
         print("Не знайдено виконуваного файлу gitleaks.")
         sys.exit(1)
 
+
 def install_gitleaks():
     system = platform.system()
     arch = platform.machine()
